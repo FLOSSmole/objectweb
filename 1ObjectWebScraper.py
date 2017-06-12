@@ -1,6 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun 12 13:16:40 2017
+
+@author: cfrankel
+"""
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
-# License: GPLv2
+# License: GPLv3
+# 
+# Contribution from:
+# Caroline Frankel
 #
 # We're working on this at http://flossmole.org - Come help us build
 # an open and accessible repository for data and analyses for free and open
@@ -39,48 +49,30 @@ password      = sys.argv[2]
 
 projectListURL = 'https://forge.ow2.org/softwaremap/full_list.php'
 
-# establish database connection: ELON
-'''
-try:
-    db = pymysql.connect(host='grid6.cs.elon.edu',
-                        database='objectweb',
-                        user='megan',
-                        password=password,
-                        use_unicode=True,
-                        charset='utf8')
-except pymysql.Error as err:
-    print(err)
-else:
-    cursor = db.cursor()
-'''
 
 # establish database connection: SYR
 try:
-    db1 = pymysql.connect(host='flossdata.syr.edu',
-                        database='objectweb',
-                        user='megan',
-                        password=password,
-                        use_unicode=True,
-                        charset='utf8')
+    db = pymysql.connect(host='flossdata.syr.edu',
+                         user='',
+                         passwd = '', 
+                         db='',
+                         use_unicode=True,
+                         charset="utf8mb4")
+    cursor = db.cursor()
 except pymysql.Error as err:
     print(err)
-else:
-    cursor1 = db1.cursor()
-
 
 # Get page that lists all projects
 try:
     projectListPage = urllib.request.urlopen(projectListURL)
-except urllib.error.URLError as e:
-    print(e.reason)
-else:
+
     urlStem = 'http://forge.objectweb.org/projects/'
-    insertProjectQuery = 'INSERT INTO ow_projects ' + \
-                         '(proj_unixname, ' + \
-                         'url,' + \
-                         'proj_long_name,' + \
-                         'datasource_id,' + \
-                         'date_collected)' + \
+    insertProjectQuery = 'INSERT INTO ow_projects ' \
+                         '(proj_unixname, ' \
+                         'url,' \
+                         'proj_long_name,' \
+                         'datasource_id,' \
+                         'date_collected)' \
                          'VALUES (%s,%s,%s,%s,%s)'
                                      
     soup = BeautifulSoup(projectListPage, "lxml")
@@ -97,14 +89,15 @@ else:
                 projectShortName = projectURL[len(urlStem):]
                 print('working on', projectShortName)
                 try:
-                    cursor1.execute(insertProjectQuery, 
+                    cursor.execute(insertProjectQuery, 
                          (projectShortName, 
                           projectURL,
                           projectLongName,
                           datasource_id,
                           datetime.datetime.now()))
-                    db1.commit()
+                    db.commit()
                 except pymysql.Error as err:
                     print(err)
-                    db1.rollback() 
-            
+                    db.rollback() 
+except urllib.error.URLError as e:
+    print(e.reason)
