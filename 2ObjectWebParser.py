@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
-# License: GPLv2
+# License: GPLv3
+#
+# Contribution from:
+# Caroline Frankel
 #
 # We're working on this at http://flossmole.org - Come help us build
 # an open and accessible repository for data and analyses for free and open
@@ -36,60 +39,38 @@ import datetime
 datasource_id = sys.argv[1]
 password      = sys.argv[2]
 
-# establish database connection: ELON
-'''
-try:
-    db = pymysql.connect(host='grid6.cs.elon.edu',
-                        database='objectweb',
-                        user='megan',
-                        password=password,
-                        use_unicode=True,
-                        charset='utf8')
-except pymysql.Error as err:
-    print(err)
-else:
-    cursor = db.cursor()
-'''
 
 # establish database connection: SYR
 try:
-    db1 = pymysql.connect(host='flossdata.syr.edu',
-                        database='objectweb',
-                        user='megan',
-                        password=password,
-                        use_unicode=True,
-                        charset='utf8')
+    db = pymysql.connect(host='flossdata.syr.edu',
+                     user='',
+                     passwd='',
+                     db='',
+                     use_unicode=True,
+                     charset="utf8mb4")
+    cursor = db.cursor()
 except pymysql.Error as err:
     print(err)
-else:
-    cursor1 = db1.cursor()
-
 
 # Get list of all projects & urls from the database
-selectQuery = 'SELECT proj_unixname, url FROM ow_projects ' + \
+selectQuery = 'SELECT proj_unixname, url FROM ow_projects ' \
               'WHERE datasource_id=%s ORDER BY 1'
-updateProjectQuery = 'UPDATE ow_projects ' + \
-                     'SET ' + \
-                     'date_registered = %s,' + \
-                     'date_collected = %s' + \
-                     'WHERE proj_unixname = %s' + \
-                     'AND datasource_id = %s;'  
+updateProjectQuery = 'UPDATE ow_projects ' \
+                     'SET ' \
+                     'date_registered = %s,' \
+                     'date_collected = %s' \
+                     'WHERE proj_unixname = %s' \
+                     'AND datasource_id = %s;'
 try:
-    cursor1.execute(selectQuery, (datasource_id))
-except pymysql.Error as err:
-    print(err)
-else:
-    listOfProjects = cursor1.fetchall()
+    cursor.execute(selectQuery, (datasource_id))
+    listOfProjects = cursor.fetchall()
+
     for project in listOfProjects:
         currentProject = project[0]
         projectOWUrl = project[1]
         print('working on', currentProject)
         try:
             projectPage = urllib.request.urlopen(projectOWUrl)
-        except urllib.error.URLError as e:
-            print(e.reason)
-        else:
-            # </ul>Registered:&nbsp;2006-09-07 18:22
             myPage = projectPage.read().decode('utf-8')
             results = re.findall('Registered:&nbsp;(.*?)\s(\d\d:\d\d)', myPage)
 
@@ -98,12 +79,16 @@ else:
                 print('Registration date:', regDate)
 
             try:
-                cursor1.execute(updateProjectQuery,
+                cursor.execute(updateProjectQuery,
                                 (regDate,
                                  datetime.datetime.now(),
                                  currentProject,
                                  datasource_id))
-                db1.commit()
+                db.commit()
             except pymysql.Error as err:
                 print(err)
-                db1.rollback()
+                db.rollback()
+        except urllib.error.URLError as e:
+            print(e.reason)
+except pymysql.Error as err:
+    print(err)
