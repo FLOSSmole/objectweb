@@ -32,7 +32,7 @@
 ################################################################
 
 import urllib.request
-from bs4 import BeautifulSoup
+import re
 import sys
 import pymysql
 import datetime
@@ -40,57 +40,56 @@ import datetime
 datasource_id = sys.argv[1]
 password      = sys.argv[2]
 
-projectListURL = 'https://forge.ow2.org/softwaremap/full_list.php'
-
 
 # establish database connection: SYR
 try:
     db = pymysql.connect(host='flossdata.syr.edu',
-                         user='',
-                         passwd = '', 
-                         db='',
-                         use_unicode=True,
-                         charset="utf8mb4")
+                     user='cfrankel',
+                     passwd='Marco1997',
+                     db='test',
+                     use_unicode=True,
+                     charset="utf8mb4")
     cursor = db.cursor()
 except pymysql.Error as err:
     print(err)
 
-# Get page that lists all projects
+# Get list of all projects & urls from the database
+selectQuery = 'SELECT proj_unixname, url FROM ow_projects ' \
+              'WHERE datasource_id=%s ORDER BY 1'
+updateProjectQuery = 'UPDATE ow_projects ' \
+                     'SET ' \
+                     'date_registered = %s,' \
+                     'date_collected = %s' \
+                     'WHERE proj_unixname = %s' \
+                     'AND datasource_id = %s;'
 try:
-    projectListPage = urllib.request.urlopen(projectListURL)
+    cursor.execute(selectQuery, (datasource_id))
+    listOfProjects = cursor.fetchall()
 
-    urlStem = 'http://forge.objectweb.org/projects/'
-    insertProjectQuery = 'INSERT INTO ow_projects ' \
-                         '(proj_unixname, ' \
-                         'url,' \
-                         'proj_long_name,' \
-                         'datasource_id,' \
-                         'date_collected)' \
-                         'VALUES (%s,%s,%s,%s,%s)'
-                                     
-    soup = BeautifulSoup(projectListPage, "lxml")
-    # Get all project names listed on that page
-    for i in soup.findAll('select', attrs={'name': 'navigation'}):
-        
-        projectOptions = i.findAll('option')
-        # For each project, pull out its basic facts and insert into database
-        for option in projectOptions:
-            projectURL = option.get('value')
-            projectLongName = option.text
+    for project in listOfProjects:
+        currentProject = project[0]
+        projectOWUrl = project[1]
+        print('working on', currentProject)
+        try:
+            projectPage = urllib.request.urlopen(projectOWUrl)
+            myPage = projectPage.read().decode('utf-8')
+            results = re.findall('Registered:&nbsp;(.*?)\s(\d\d:\d\d)', myPage)
 
-            if projectURL and urlStem in projectURL:
-                projectShortName = projectURL[len(urlStem):]
-                print('working on', projectShortName)
-                try:
-                    cursor.execute(insertProjectQuery, 
-                         (projectShortName, 
-                          projectURL,
-                          projectLongName,
-                          datasource_id,
-                          datetime.datetime.now()))
-                    db.commit()
-                except pymysql.Error as err:
-                    print(err)
-                    db.rollback() 
-except urllib.error.URLError as e:
-    print(e.reason)
+            if results:
+                regDate = results[0][0] + ' ' + results[0][1]
+                print('Registration date:', regDate)
+
+            try:
+                cursor.execute(updateProjectQuery,
+                                (regDate,
+                                 datetime.datetime.now(),
+                                 currentProject,
+                                 datasource_id))
+                db.commit()
+            except pymysql.Error as err:
+                print(err)
+                db.rollback()
+        except urllib.error.URLError as e:
+            print(e.reason)
+except pymysql.Error as err:
+    print(err)
