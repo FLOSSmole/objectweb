@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
 # License: GPLv3
@@ -88,11 +89,11 @@ try:
             projectLongName = option.text
 
             if projectURL and urlStem in projectURL:
-                projectShortName = projectURL[len(urlStem):
+                projectShortName = projectURL[len(urlStem):]
 
                 print('working on', projectShortName)
                 try:
-                    cursor.execute(insertProjectQuery, 
+                    cursor.execute(insertQuery, 
                          (projectShortName, 
                           projectURL,
                           projectLongName,
@@ -102,5 +103,5 @@ try:
                 except pymysql.Error as err:
                     print(err)
                     db.rollback() 
-except urllib.error.URLError as e:
-    print(e.reason)
+except urllib2.HTTPError as herror:
+    print(herror)
