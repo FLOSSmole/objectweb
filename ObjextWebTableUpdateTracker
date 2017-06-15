@@ -1,0 +1,9 @@
+I changed the ow_project_indexes table so:
+  - proj_unixname and indexhtml were utf8_general_ci	
+    * ALTER TABLE `ow_project_indexes` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+    * ALTER TABLE `ow_project_indexes` CHANGE `indexhtml` `indexhtml` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+  
+  - indexhtml is now medium text
+    * ALTER TABLE `ow_project_indexes` CHANGE `indexhtml` `indexhtml` MEDIUMTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL;
+ 
+ 
