@@ -25,7 +25,7 @@
 #
 ################################################################
 # usage:
-# python 1ObjectWebScraper.py <datasource_id> <password>
+# python 2ObjectWebParser.py <datasource_id> <password>
 #
 # purpose:
 # grab project page and parse out interesting bits, write those to db
