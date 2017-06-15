@@ -1,9 +1,47 @@
 I changed the ow_project_indexes table so:
   - proj_unixname and indexhtml were utf8_general_ci	
-    * ALTER TABLE `ow_project_indexes` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
-    * ALTER TABLE `ow_project_indexes` CHANGE `indexhtml` `indexhtml` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+    ALTER TABLE `ow_project_indexes` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+    ALTER TABLE `ow_project_indexes` CHANGE `indexhtml` `indexhtml` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
   
   - indexhtml is now medium text
-    * ALTER TABLE `ow_project_indexes` CHANGE `indexhtml` `indexhtml` MEDIUMTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL;
+    ALTER TABLE `ow_project_indexes` CHANGE `indexhtml` `indexhtml` MEDIUMTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL;
+
+I changed the ow_project_description table so:
+  - proj_unixname and description were utf8_general_ci	
+    ALTER TABLE `ow_project_description` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_description` CHANGE `description` `description` VARCHAR(254) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL;
+
+I changed the ow_project_environment table so:
+  - proj_unixname, code, and description were utf8_general_ci	
+    ALTER TABLE `ow_project_environment` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_environment` CHANGE `code` `code` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_environment` CHANGE `description` `description` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
  
- 
+  - the label description was spelled wrong so I chenged it to correct spelling
+    ALTER TABLE `ow_project_environment` CHANGE `destription` `description` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+
+I changed the ow_project_intended_audience table so:
+  - proj_unixname, code, and description were utf8_general_ci	
+    ALTER TABLE `ow_project_intended_audience` CHANGE `description` `description` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_intended_audience` CHANGE `code` `code` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_intended_audience` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+
+I changed the ow_project_licenses table so:
+  - proj_unixname, code, and description were utf8_general_ci	
+    ALTER TABLE `ow_project_licenses` CHANGE `description` `description` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_licenses` CHANGE `code` `code` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_licenses` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    
+I changed the ow_project_operating_system table so:
+  - proj_unixname, code, and description were utf8_general_ci	
+    ALTER TABLE `ow_project_operating_system` CHANGE `description` `description` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_operating_system` CHANGE `code` `code` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_operating_system` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    
+I changed the ow_project_programming_language table so:
+  - proj_unixname, code, and description were utf8_general_ci	
+    ALTER TABLE `ow_project_programming_language` CHANGE `description` `description` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_programming_language` CHANGE `code` `code` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_project_programming_language` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+       
+TO BE CONTINUED....
