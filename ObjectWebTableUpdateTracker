@@ -57,10 +57,13 @@ I changed the ow_project_status table so:
     ALTER TABLE `ow_project_status` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
     ALTER TABLE `ow_project_status` CHANGE `code_on_page` `code_on_page` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
    
+I changed the ow_developers table so:
+  - dev_loginname and realname were utf8_general_ci	
+    ALTER TABLE `ow_developers` CHANGE `dev_loginname` `dev_loginname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_developers` CHANGE `realname` `realname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
 
-
-
-
-
-
-TO BE CONTINUED....
+I changed the ow_developer_projects table so:
+  - dev_loginname, proj_unixname, and position were utf8_general_ci	
+    ALTER TABLE `ow_developer_projects` CHANGE `dev_loginname` `dev_loginname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_developer_projects` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+    ALTER TABLE `ow_developer_projects` CHANGE `position` `position` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
