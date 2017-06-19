@@ -31,7 +31,6 @@
 # grab project page and parse out interesting bits, write those to db
 ################################################################
 
-import sys
 import pymysql
 import re
 import datetime
@@ -42,6 +41,9 @@ except ImportError:
     import urllib2
 
 projDesc = None
+code = None
+descr = None
+
 
 # Update the indexes table
 def indexes():
@@ -73,125 +75,51 @@ def description():
         db.rollback()
 
 
-# Update the environment table
-def environment():
-    try:
-        cursor.execute(updateEnvironmentQuery,
-                       (code1,
-                        descr1,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code1))
-        db.commit()
-        print(currentProject, "updated in environment table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
+def run(word, query):
+    for d in details:
+        regex = 'cat=(.*?)\">'
 
-
-# Update the audience table
-def audience():
-    try:
-        cursor.execute(updateAudienceQuery,
-                       (code2,
-                        descr2,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code2))
-        db.commit()
-        print(currentProject, "updated in audience table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
-
-# Update the licenses table
-def licenses():
-    try:
-        cursor.execute(updateLicensesQuery,
-                       (code3,
-                        descr3,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code3))
-        db.commit()
-        print(currentProject, "updated in licenses table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
-
-# Update the operating system table
-def systems():
-    try:
-        cursor.execute(updateSystemQuery,
-                       (code4,
-                        descr4,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code4))
-        db.commit()
-        print(currentProject, "updated in system table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
-
-# Update the language table
-def language():
-    try:
-        cursor.execute(updateLanguageQuery,
-                       (code5,
-                        descr5,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code5))
-        db.commit()
-        print(currentProject, "updated in language table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
-
-# Update the topic table
-def topic():
-    try:
-        cursor.execute(updateTopicQuery,
-                       (code6,
-                        descr6,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code6))
-        db.commit()
-        print(currentProject, "updated in topic table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
-
-# Update the status table
-def status():
-    try:
-        cursor.execute(updateStatusQuery,
-                       (code7,
-                        descr7,
-                        codeOnPage,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id,
-                        code7))
-        db.commit()
-        print(currentProject, "updated in status table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
+        if word in d.contents[0]:
+            for line in d.contents[1:]:
+                match = re.findall(regex, str(line))
+                if match:
+                    code = match[0]
+                for l in line:
+                    if len(l) > 1:
+                        descript = l
+                        if word == 'Status':
+                            codeOnPage = descript.split(' -')[0]
+                            descr = descript.split('- ')[1]
+                            print(code, descr, codeOnPage)
+                            try:
+                                cursor.execute(updateStatusQuery,
+                                               (code,
+                                                descr,
+                                                codeOnPage,
+                                                datetime.datetime.now(),
+                                                currentProject,
+                                                datasource_id,
+                                                code))
+                                db.commit()
+                                print(currentProject, "updated in status table!")
+                            except pymysql.Error as err:
+                                print(err)
+                                db.rollback()
+                        else:
+                            try:
+                                print(code, descript)
+                                cursor.execute(query,
+                                               (code,
+                                                descript,
+                                                datetime.datetime.now(),
+                                                currentProject,
+                                                datasource_id,
+                                                code))
+                                db.commit()
+                                print(currentProject, "updated in", word, "table!")
+                            except pymysql.Error as err:
+                                print(err)
+                                db.rollback()
 
 # establish database connection: SYR
 try:
@@ -207,7 +135,7 @@ except pymysql.Error as err:
 
 # Get list of all projects & urls from the database
 selectQuery = 'SELECT proj_unixname, url, datasource_id FROM ow_projects \
-              ORDER BY 1'# LIMIT 1'
+              ORDER BY 1 LIMIT 1'
 
 updateIndexesQuery = 'UPDATE ow_project_indexes \
                      SET  \
@@ -325,92 +253,18 @@ try:
 
             details = soup.find_all('li')
 
-            for d in details:
-                regex = 'cat=(.*?)\">'
-
-                if 'Status' in d.contents[0]:
-                    for stat in d.contents[1:]:
-                        match = re.findall(regex, str(stat))
-                        if match:
-                            code7 = match[0]
-                        for s in stat:
-                            if len(s) > 1:
-                                status1 = s
-                                codeOnPage = status1.split(' -')[0]
-                                descr7 = status1.split('- ')[1]
-                                print(code7, descr7, codeOnPage)
-                                status()  # Updates the status table
-
-                if 'Environment' in d.contents[0]:
-                    for envi in d.contents[1:]:
-                        match = re.findall(regex, str(envi))
-                        if match:
-                            code1 = match[0]
-                        for e in envi:
-                            if len(e) > 1:
-                                descr1 = e
-                                print(code1, descr1)
-                                environment()  # Updates the environment table
-
-                if 'Audience' in d.contents[0]:
-                    for aud in d.contents[1:]:
-                        match = re.findall(regex, str(aud))
-                        if match:
-                            code2 = match[0]
-                        for a in aud:
-                            if len(a) > 1:
-                                descr2 = a
-                                print(code2, descr2)
-                                audience()  # Updates the audience table
-
-                if 'License' in d.contents[0]:
-                    for lic in d.contents[1:]:
-                        match = re.findall(regex, str(lic))
-                        if match:
-                            code3 = match[0]
-                        for l in lic:
-                            if len(l) > 1:
-                                descr3 = l
-                                print(code3, descr3)
-                                licenses()  # Updates the licenses table
-
-                if 'System' in d.contents[0]:
-                    for sys in d.contents[1:]:
-                        match = re.findall(regex, str(sys))
-                        if match:
-                            code4 = match[0]
-                        for s in sys:
-                            if len(s) > 1:
-                                descr4 = s
-                                print(code4, descr4)
-                                systems()  # Updates systems table
-
-                if 'Language' in d.contents[0]:
-                    for lang in d.contents[1:]:
-                        match = re.findall(regex, str(lang))
-                        if match:
-                            code5 = match[0]
-                        for lan in lang:
-                            if len(lan) > 1:
-                                descr5 = lan
-                                print(code5, descr5)
-                                language()  # Updates languages table
-
-                if 'Topic' in d.contents[0]:
-                    for top in d.contents[1:]:
-                        match = re.findall(regex, str(top))
-                        if match:
-                            code6 = match[0]
-                        for t in top:
-                            if len(t) > 1:
-                                descr6 = t
-                                print(code6, descr6)
-                                topic()  # Updates topic table
+            run('Status', updateStatusQuery)  # Updates the status table
+            run('Environment', updateEnvironmentQuery)  # Updates the environment table
+            run('Audience', updateAudienceQuery)  # Updates the intended audience table
+            run('License', updateLicensesQuery)  # Updates the licenses table
+            run('System', updateSystemQuery)  # Updates the operating system table
+            run('Language', updateLanguageQuery)  # Updates the programming language table
+            run('Topic', updateTopicQuery)  # Updates the topic table
 
             indexes()  # Updates the indexes table
             description()  # Updates the description table
 
         except pymysql.Error as err:
-            print(e.reason)
+            print(err.reason)
 except pymysql.Error as err:
     print(err)
