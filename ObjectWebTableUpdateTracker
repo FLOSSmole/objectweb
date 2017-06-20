@@ -62,11 +62,14 @@ I changed the ow_developers table so:
     ALTER TABLE `ow_developers` CHANGE `dev_loginname` `dev_loginname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
     ALTER TABLE `ow_developers` CHANGE `realname` `realname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
 
-  - added sections for member since, 
+  - added sections for member since, email, user_url, urser_html
   ALTER TABLE `ow_developers` ADD `member_since` DATE NULL ;
   ALTER TABLE `ow_developers` ADD `email` VARCHAR(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL ;
   ALTER TABLE `ow_developers` ADD `user_url` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL;
   ALTER TABLE `ow_developers` ADD `user_html` MEDIUMTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL ;
+  
+  - changed member since to datetime
+  ALTER TABLE `ow_developers` CHANGE `member_since` `member_since` DATETIME NULL DEFAULT NULL;
   
 I changed the ow_developer_projects table so:
   - dev_loginname, proj_unixname, and position were utf8_general_ci	
