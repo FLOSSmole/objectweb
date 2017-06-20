@@ -73,3 +73,10 @@ I changed the ow_developer_projects table so:
     ALTER TABLE `ow_developer_projects` CHANGE `dev_loginname` `dev_loginname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
     ALTER TABLE `ow_developer_projects` CHANGE `proj_unixname` `proj_unixname` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
     ALTER TABLE `ow_developer_projects` CHANGE `position` `position` VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';
+
+  - changed date_collected to timestamp
+    ALTER TABLE `ow_developer_projects` CHANGE `date_collected` `date_collected` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00';
+   
+   
+   
+   
