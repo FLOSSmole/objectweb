@@ -95,8 +95,8 @@ insertQuery = 'INSERT INTO ow_projects  \
 insertIndexQuery = 'INSERT into ow_project_indexes \
                         (proj_unixname, \
                         indexhtml, \
-                        date_collected, \
-                        datasource_id) \
+                        datasource_id, \
+                        date_collected) 
                         VALUES(%s,%s,%s,now())'
 
 # set up headers
