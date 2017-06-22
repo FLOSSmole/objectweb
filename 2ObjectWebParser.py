@@ -33,6 +33,7 @@
 import sys
 import pymysql
 import re
+from bs4 import BeautifulSoup
 
 datasource_id = sys.argv[1]
 dbpw = sys.argv[2]
@@ -58,8 +59,8 @@ except pymysql.Error as err:
     print(err)
 
 # Get list of all projects & urls from the database
-selectQuery = 'SELECT proj_unixname, url \
-               FROM ow_projects \
+selectQuery = 'SELECT proj_unixname, indexhtml \
+               FROM ow_project_indexes \
                WHERE datasource_id=%s \
                ORDER BY 1'
 
@@ -73,32 +74,17 @@ updateProjectQuery = 'UPDATE ow_projects \
                       WHERE proj_unixname = %s \
                       AND datasource_id = %s'
 
-# set up headers
-hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-           'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-           'Accept-Encoding': 'none',
-           'Accept-Language': 'en-US,en;q=0.8',
-           'Connection': 'keep-alive'}
-
 try:
     cursor.execute(selectQuery, (datasource_id))
     listOfProjects = cursor.fetchall()
 
     for project in listOfProjects:
         currentProject = project[0]
-        projectOWUrl = project[1]
+        html = project[1]
         print('\nworking on', currentProject)
 
         try:
-            # TO-DO: replace this part
-            # use the index html that we collected in 1ObjectWebScraper.py
-            # then, replace the 'soup' in the lines below
-            '''
-            projectPage = urllib2.Request(projectOWUrl, headers=hdr)
-            myPage = urllib2.urlopen(projectPage).read()
-            soup = BeautifulSoup(myPage, "html.parser")
-            '''
+            soup = BeautifulSoup(html, "html.parser")
 
             # Parse out homepage
             regex1 = '<a href="(.*?)"><img alt="Home Page"'
