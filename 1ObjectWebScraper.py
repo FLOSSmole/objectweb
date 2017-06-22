@@ -62,7 +62,7 @@ insertQuery = 'INSERT INTO ow_projects  \
                          proj_long_name, \
                          datasource_id, \
                          date_collected) \
-                         VALUES (%s,%s,%s,%s,%s)'
+                         VALUES (%s,%s,%s,%s,now())'
 
 # TODO:
 # put new INSERT query here, to write to ow_project_indexes
@@ -103,8 +103,7 @@ try:
                                    (projectShortName,
                                     projectURL,
                                     projectLongName,
-                                    datasource_id,
-                                    datetime.datetime.now()))
+                                    datasource_id))
                     dbconn.commit()
                 except pymysql.Error as err:
                     print(err)
