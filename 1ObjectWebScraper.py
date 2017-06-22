@@ -42,16 +42,19 @@ except ImportError:
     import urllib2
 
 datasource_id = sys.argv[1]
-password      = sys.argv[2]
+dbpw = sys.argv[2]
+dbhost = 'flossdata.syr.edu'
+dbuser = 'megan'
+dbschema = 'objectweb'
 
-# establish database connection: SYR
-db = pymysql.connect(host='flossdata.syr.edu',
-                     user='',
-                     passwd='',
-                     db='',
-                     use_unicode=True,
-                     charset="utf8mb4")
-cursor = db.cursor()
+# establish database connection
+dbconn = pymysql.connect(host=dbhost,
+                         user=dbuser,
+                         passwd=dbpw,
+                         db=dbschema,
+                         use_unicode=True,
+                         charset="utf8mb4")
+cursor = dbconn.cursor()
 
 insertQuery = 'INSERT INTO ow_projects  \
                          (proj_unixname,  \
@@ -74,14 +77,14 @@ try:
     projectListURL = 'https://forge.ow2.org/softwaremap/full_list.php'
 
     req = urllib2.Request(projectListURL, headers=hdr)
-    projectListPage = urllib2.urlopen(req).read()  # this is a HTML
+    projectListPage = urllib2.urlopen(req).read()
 
     soup = BeautifulSoup(projectListPage, "html.parser")
-    td = soup.find_all('select', attrs={'name': 'navigation'})
+    tds = soup.find_all('select', attrs={'name': 'navigation'})
 
     urlStem = 'http://forge.objectweb.org/projects/'
 
-    for line in td:
+    for line in tds:
         projectOptions = line.find_all('option')
 
         for option in projectOptions:
@@ -93,15 +96,18 @@ try:
 
                 print('working on', projectShortName)
                 try:
-                    cursor.execute(insertQuery, 
-                         (projectShortName, 
-                          projectURL,
-                          projectLongName,
-                          datasource_id,
-                          datetime.datetime.now()))
-                    db.commit()
+                    cursor.execute(insertQuery,
+                                   (projectShortName,
+                                    projectURL,
+                                    projectLongName,
+                                    datasource_id,
+                                    datetime.datetime.now()))
+                    dbconn.commit()
                 except pymysql.Error as err:
                     print(err)
-                    db.rollback() 
+                    dbconn.rollback()
 except urllib2.HTTPError as herror:
     print(herror)
+    
+dbconn.close()
+
