@@ -44,22 +44,6 @@ projDesc = None
 code = None
 descr = None
 
-
-# Update the indexes table
-def indexes():
-    try:
-        cursor.execute(updateIndexesQuery,
-                       (projectHtml,
-                        datetime.datetime.now(),
-                        currentProject,
-                        datasource_id))
-        db.commit()
-        print(currentProject, "updated in indexes table!")
-    except pymysql.Error as err:
-        print(err)
-        db.rollback()
-
-
 # Update the description table
 def description():
     try:
@@ -134,15 +118,8 @@ except pymysql.Error as err:
     print(err)
 
 # Get list of all projects & urls from the database
-selectQuery = 'SELECT proj_unixname, url, datasource_id FROM ow_projects \
-              ORDER BY 1 LIMIT 1'
-
-updateIndexesQuery = 'UPDATE ow_project_indexes \
-                     SET  \
-                     indexhtml = %s, \
-                     date_collected = %s \
-                     WHERE proj_unixname = %s \
-                     AND datasource_id = %s;'
+selectQuery = 'SELECT proj_unixname, indexhtml, datasource_id FROM ow_project_indexes \
+              ORDER BY 1'
 
 updateDescriptionQuery = 'UPDATE ow_project_description \
                          SET \
@@ -217,29 +194,18 @@ updateStatusQuery = 'UPDATE ow_project_status \
                           AND datasource_id = %s \
                           AND code = %s;'
 
-
-# set up headers
-hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-           'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-           'Accept-Encoding': 'none',
-           'Accept-Language': 'en-US,en;q=0.8',
-           'Connection': 'keep-alive'}
-
 try:
     cursor.execute(selectQuery)
     listOfProjects = cursor.fetchall()
 
     for project in listOfProjects:
         currentProject = project[0]
-        projectUrl = project[1]
+        html = project[1]
         datasource_id = project[2]
         print('\nworking on', currentProject)
 
         try:
-            projectPage = urllib2.Request(projectUrl, headers=hdr)
-            myPage = urllib2.urlopen(projectPage).read()
-            soup = BeautifulSoup(myPage, "html.parser")
+            soup = BeautifulSoup(html, "html.parser")
             projectHtml = str(soup)
 
             # Get description of project
@@ -261,7 +227,6 @@ try:
             run('Language', updateLanguageQuery)  # Updates the programming language table
             run('Topic', updateTopicQuery)  # Updates the topic table
 
-            indexes()  # Updates the indexes table
             description()  # Updates the description table
 
         except pymysql.Error as err:
