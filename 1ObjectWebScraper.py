@@ -47,6 +47,34 @@ dbhost = 'flossdata.syr.edu'
 dbuser = 'megan'
 dbschema = 'objectweb'
 
+def runInsertQuery():
+    try:
+        cursor.execute(insertQuery,
+                       (projectShortName,
+                        projectURL,
+                        projectLongName,
+                        datasource_id))
+        dbconn.commit()
+        print(projectShortName, 'inserted into projects table!')
+    except pymysql.Error as err:
+        print(err)
+        dbconn.rollback()
+
+
+def runInsertIndexQuery():
+    try:
+        cursor.execute(insertIndexQuery,
+                       (projectShortName,
+                        html,
+                        datasource_id))
+        dbconn.commit()
+        print(projectShortName, 'inserted into indexes table!')
+
+    except pymysql.Error as err:
+        print(err)
+        dbconn.rollback()
+
+        
 # establish database connection
 dbconn = pymysql.connect(host=dbhost,
                          user=dbuser,
@@ -64,8 +92,12 @@ insertQuery = 'INSERT INTO ow_projects  \
                          date_collected) \
                          VALUES (%s,%s,%s,%s,now())'
 
-# TODO:
-# put new INSERT query here, to write to ow_project_indexes
+insertIndexQuery = 'INSERT into ow_project_indexes \
+                        (proj_unixname, \
+                        indexhtml, \
+                        date_collected, \
+                        datasource_id) \
+                        VALUES(%s,%s,%s,now())'
 
 # set up headers
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -95,26 +127,18 @@ try:
             projectLongName = option.text
 
             if projectURL and urlStem in projectURL:
+                #print(projectURL)
                 projectShortName = projectURL[len(urlStem):]
 
                 print('working on', projectShortName)
-                try:
-                    cursor.execute(insertQuery,
-                                   (projectShortName,
-                                    projectURL,
-                                    projectLongName,
-                                    datasource_id))
-                    dbconn.commit()
-                except pymysql.Error as err:
-                    print(err)
-                    dbconn.rollback()
-                    
-            # TODO: go ahead and get the index.html for each page, and write it
-            # to the database.
-            # This will be another urllib2.Request
-            
+                runInsertQuery()
+                
+                url = urlStem + projectShortName
+                projectPage = urllib2.Request(url, headers=hdr)
+                html = urllib2.urlopen(projectPage).read()
+                runInsertIndexQuery()
+                
 except urllib2.HTTPError as herror:
     print(herror)
     
 dbconn.close()
-
