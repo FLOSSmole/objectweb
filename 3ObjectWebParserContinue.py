@@ -35,10 +35,6 @@ import pymysql
 import re
 import datetime
 from bs4 import BeautifulSoup
-try:
-    import urllib.request as urllib2
-except ImportError:
-    import urllib2
 
 projDesc = None
 code = None
