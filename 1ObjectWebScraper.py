@@ -35,7 +35,7 @@
 from bs4 import BeautifulSoup
 import sys
 import pymysql
-import datetime
+
 try:
     import urllib.request as urllib2
 except ImportError:
@@ -46,6 +46,7 @@ dbpw = sys.argv[2]
 dbhost = 'flossdata.syr.edu'
 dbuser = 'megan'
 dbschema = 'objectweb'
+
 
 def runInsertQuery():
     try:
@@ -74,7 +75,7 @@ def runInsertIndexQuery():
         print(err)
         dbconn.rollback()
 
-        
+
 # establish database connection
 dbconn = pymysql.connect(host=dbhost,
                          user=dbuser,
@@ -96,7 +97,7 @@ insertIndexQuery = 'INSERT into ow_project_indexes \
                         (proj_unixname, \
                         indexhtml, \
                         datasource_id, \
-                        date_collected) 
+                        date_collected) \
                         VALUES(%s,%s,%s,now())'
 
 # set up headers
@@ -127,18 +128,18 @@ try:
             projectLongName = option.text
 
             if projectURL and urlStem in projectURL:
-                #print(projectURL)
+                # print(projectURL)
                 projectShortName = projectURL[len(urlStem):]
 
                 print('working on', projectShortName)
                 runInsertQuery()
-                
+
                 url = urlStem + projectShortName
                 projectPage = urllib2.Request(url, headers=hdr)
                 html = urllib2.urlopen(projectPage).read()
                 runInsertIndexQuery()
-                
+
 except urllib2.HTTPError as herror:
     print(herror)
-    
+
 dbconn.close()
