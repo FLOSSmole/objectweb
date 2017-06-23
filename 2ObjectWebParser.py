@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
 # License: GPLv3
-# 
+#
 # Contribution from:
 # Caroline Frankel
 #
@@ -58,7 +58,8 @@ try:
 except pymysql.Error as err:
     print(err)
 
-# Get list of all projects & urls from the database
+# Get list of all projects & indexes from the database
+# (Objectweb is small enough that we can get all these at once)
 selectQuery = 'SELECT proj_unixname, indexhtml \
                FROM ow_project_indexes \
                WHERE datasource_id=%s \
@@ -112,7 +113,7 @@ try:
                 groupId = match3
                 print("--group id: ", groupId)
 
-            # Parse out Developer count
+            # Parse out developer count
             regex4 = 'class=\"develtitle\">Developers:</span><br/>\s*(.*?)\s*<a'
             match4 = re.findall(regex4, str(soup))[0]
 
@@ -136,3 +137,5 @@ try:
             print(err.reason)
 except pymysql.Error as err:
     print(err)
+
+dbconn.close()
