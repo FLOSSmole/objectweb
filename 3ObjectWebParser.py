@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
 # License: GPLv3
@@ -25,7 +26,7 @@
 #
 ################################################################
 # usage:
-# python 3ObjectWebParserContinue.py <datasource_id> <password>
+# python 3ObjectWebParser.py <datasource_id> <password>
 #
 # purpose:
 # grab project page and parse out interesting bits, write those to db
@@ -33,29 +34,34 @@
 
 import pymysql
 import re
-import datetime
+import sys
 from bs4 import BeautifulSoup
+datasourceID = sys.argv[1]
+dbuser = ''
+dbhost = ''
+dbpw = sys.argv[2]
+dbschema = ''
+
 
 projDesc = None
-code = None
-descr = None
 
 # Update the description table
-def description():
+def updateDescription():
     try:
         cursor.execute(updateDescriptionQuery,
                        (projDesc,
-                        datetime.datetime.now(),
                         currentProject,
-                        datasource_id))
-        db.commit()
+                        datasourceID))
+        dbconn.commit()
         print(currentProject, "updated in description table!")
     except pymysql.Error as err:
         print(err)
-        db.rollback()
+        dbconn.rollback()
 
-
-def run(word, query):
+# update a given table using the query & table passed
+def runQuery(word, query):
+    code = None
+    descr = None
     for d in details:
         regex = 'cat=(.*?)\">'
 
@@ -76,51 +82,50 @@ def run(word, query):
                                                (code,
                                                 descr,
                                                 codeOnPage,
-                                                datetime.datetime.now(),
                                                 currentProject,
-                                                datasource_id,
+                                                datasourceID,
                                                 code))
-                                db.commit()
+                                dbconn.commit()
                                 print(currentProject, "updated in status table!")
                             except pymysql.Error as err:
                                 print(err)
-                                db.rollback()
+                                dbconn.rollback()
                         else:
                             try:
                                 print(code, descript)
                                 cursor.execute(query,
                                                (code,
                                                 descript,
-                                                datetime.datetime.now(),
                                                 currentProject,
-                                                datasource_id,
+                                                datasourceID,
                                                 code))
-                                db.commit()
+                                dbconn.commit()
                                 print(currentProject, "updated in", word, "table!")
                             except pymysql.Error as err:
                                 print(err)
-                                db.rollback()
+                                dbconn.rollback()
 
-# establish database connection: SYR
 try:
-    db = pymysql.connect(host='flossdata.syr.edu',
-                         user='',
-                         passwd='',
-                         db='',
-                         use_unicode=True,
-                         charset="utf8mb4")
-    cursor = db.cursor()
+    dbconn = pymysql.connect(host=dbhost,
+                             user=dbuser,
+                             passwd=dbpw,
+                             db=dbschema,
+                             use_unicode=True,
+                             charset="utf8mb4")
+    cursor = dbconn.cursor()
 except pymysql.Error as err:
     print(err)
 
 # Get list of all projects & urls from the database
-selectQuery = 'SELECT proj_unixname, indexhtml, datasource_id FROM ow_project_indexes \
-              ORDER BY 1'
+selectQuery = 'SELECT proj_unixname, indexhtml \
+               FROM ow_project_indexes \
+               WHERE datasource_id= %s \
+               ORDER BY 1'
 
 updateDescriptionQuery = 'UPDATE ow_project_description \
                          SET \
                          description = %s, \
-                         date_collected = %s \
+                         date_collected = now() \
                          WHERE proj_unixname = %s \
                          AND datasource_id = %s;'
 
@@ -128,7 +133,7 @@ updateEnvironmentQuery = 'UPDATE ow_project_environment \
                           SET \
                           code = %s, \
                           description = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
@@ -137,7 +142,7 @@ updateAudienceQuery = 'UPDATE ow_project_intended_audience \
                           SET \
                           code = %s, \
                           description = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
@@ -146,7 +151,7 @@ updateLicensesQuery = 'UPDATE ow_project_licenses \
                           SET \
                           code = %s, \
                           description = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
@@ -155,7 +160,7 @@ updateSystemQuery = 'UPDATE ow_project_operating_system \
                           SET \
                           code = %s, \
                           description = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
@@ -164,7 +169,7 @@ updateLanguageQuery = 'UPDATE ow_project_programming_language \
                           SET \
                           code = %s, \
                           description = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
@@ -174,7 +179,7 @@ updateTopicQuery = 'UPDATE ow_project_topic \
                           SET \
                           code = %s, \
                           description = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
@@ -185,19 +190,18 @@ updateStatusQuery = 'UPDATE ow_project_status \
                           code = %s, \
                           description = %s, \
                           code_on_page = %s, \
-                          date_collected = %s \
+                          date_collected = now() \
                           WHERE proj_unixname = %s \
                           AND datasource_id = %s \
                           AND code = %s;'
 
 try:
-    cursor.execute(selectQuery)
+    cursor.execute(selectQuery, (datasourceID,))
     listOfProjects = cursor.fetchall()
 
     for project in listOfProjects:
         currentProject = project[0]
         html = project[1]
-        datasource_id = project[2]
         print('\nworking on', currentProject)
 
         try:
@@ -215,17 +219,19 @@ try:
 
             details = soup.find_all('li')
 
-            run('Status', updateStatusQuery)  # Updates the status table
-            run('Environment', updateEnvironmentQuery)  # Updates the environment table
-            run('Audience', updateAudienceQuery)  # Updates the intended audience table
-            run('License', updateLicensesQuery)  # Updates the licenses table
-            run('System', updateSystemQuery)  # Updates the operating system table
-            run('Language', updateLanguageQuery)  # Updates the programming language table
-            run('Topic', updateTopicQuery)  # Updates the topic table
+            runQuery('Status', updateStatusQuery)  # Updates the status table
+            runQuery('Environment', updateEnvironmentQuery)  # Updates the environment table
+            runQuery('Audience', updateAudienceQuery)  # Updates the intended audience table
+            runQuery('License', updateLicensesQuery)  # Updates the licenses table
+            runQuery('System', updateSystemQuery)  # Updates the operating system table
+            runQuery('Language', updateLanguageQuery)  # Updates the programming language table
+            runQuery('Topic', updateTopicQuery)  # Updates the topic table
 
-            description()  # Updates the description table
+            updateDescription()  # Updates the description table
 
         except pymysql.Error as err:
             print(err.reason)
 except pymysql.Error as err:
     print(err)
+
+dbconn.close()
