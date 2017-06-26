@@ -37,10 +37,10 @@ import re
 import sys
 from bs4 import BeautifulSoup
 datasourceID = sys.argv[1]
-dbuser = ''
-dbhost = ''
+dbuser = 'megan'
 dbpw = sys.argv[2]
-dbschema = ''
+dbschema = 'objectweb'
+dbhost = 'flossdata.syr.edu'
 
 
 projDesc = None
