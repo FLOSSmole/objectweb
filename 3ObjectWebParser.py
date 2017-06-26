@@ -44,13 +44,12 @@ dbhost = 'flossdata.syr.edu'
 
 
 projDesc = None
-
 # Update the description table
 def updateDescription():
     try:
-        cursor.execute(updateDescriptionQuery,
-                       (projDesc,
-                        currentProject,
+        cursor.execute(insertDescriptionQuery,
+                       (currentProject,
+                        projDesc,
                         datasourceID))
         dbconn.commit()
         print(currentProject, "updated in description table!")
@@ -77,14 +76,14 @@ def runQuery(word, query):
                             codeOnPage = descript.split(' -')[0]
                             descr = descript.split('- ')[1]
                             print(code, descr, codeOnPage)
-                            try:
-                                cursor.execute(updateStatusQuery,
-                                               (code,
+                            
+                            try:    
+                                cursor.execute(insertStatusQuery,
+                                               (currentProject,
+                                                code,
                                                 descr,
                                                 codeOnPage,
-                                                currentProject,
-                                                datasourceID,
-                                                code))
+                                                datasourceID))
                                 dbconn.commit()
                                 print(currentProject, "updated in status table!")
                             except pymysql.Error as err:
@@ -94,11 +93,10 @@ def runQuery(word, query):
                             try:
                                 print(code, descript)
                                 cursor.execute(query,
-                                               (code,
-                                                descript,
-                                                currentProject,
+                                               (currentProject,
                                                 datasourceID,
-                                                code))
+                                                code,
+                                                descript))
                                 dbconn.commit()
                                 print(currentProject, "updated in", word, "table!")
                             except pymysql.Error as err:
@@ -122,78 +120,71 @@ selectQuery = 'SELECT proj_unixname, indexhtml \
                WHERE datasource_id= %s \
                ORDER BY 1'
 
-updateDescriptionQuery = 'UPDATE ow_project_description \
-                         SET \
-                         description = %s, \
-                         date_collected = now() \
-                         WHERE proj_unixname = %s \
-                         AND datasource_id = %s;'
+insertDescriptionQuery = 'INSERT INTO ow_project_description \
+                         (proj_unixname, \
+                         description, \
+                         datasource_id, \
+                         date_collected) \
+                         VALUES(%s, %s, %s, now())'
 
-updateEnvironmentQuery = 'UPDATE ow_project_environment \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+insertEnvironmentQuery = 'INSERT INTO ow_project_environment \
+                          (proj_unixname, \
+                          datasource_id, \
+                          code, \
+                          description, \
+                          date_collected) \
+                          VALUES (%s, %s, %s, %s, now())'
 
-updateAudienceQuery = 'UPDATE ow_project_intended_audience \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+insertAudienceQuery = 'INSERT INTO ow_project_intended_audience \
+                          (proj_unixname, \
+                          datasource_id, \
+                          code, \
+                          description, \
+                          date_collected) \
+                          VALUES (%s, %s, %s, %s, now())'
 
-updateLicensesQuery = 'UPDATE ow_project_licenses \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+insertLicensesQuery = 'INSERT INTO ow_project_licenses \
+                          (proj_unixname, \
+                          datasource_id, \
+                          code, \
+                          description, \
+                          date_collected) \
+                          VALUES (%s, %s, %s, %s, now())'
 
-updateSystemQuery = 'UPDATE ow_project_operating_system \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+updateSystemQuery = 'INSERT INTO ow_project_operating_system \
+                          (proj_unixname, \
+                          datasource_id, \
+                          code, \
+                          description, \
+                          date_collected) \
+                          VALUES (%s, %s, %s, %s, now())'
 
-updateLanguageQuery = 'UPDATE ow_project_programming_language \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+insertLanguageQuery = 'INSERT INTO ow_project_programming_language \
+                          (proj_unixname, \
+                          datasource_id, \
+                          code, \
+                          description, \
+                          date_collected) \
+                          VALUES (%s, %s, %s, %s, now())'
 
 
-updateTopicQuery = 'UPDATE ow_project_topic \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+insertTopicQuery = 'INSERT INTO ow_project_topic \
+                          (proj_unixname, \
+                          datasource_id, \
+                          code, \
+                          description, \
+                          date_collected) \
+                          VALUES (%s, %s, %s, %s, now())'
 
 
-updateStatusQuery = 'UPDATE ow_project_status \
-                          SET \
-                          code = %s, \
-                          description = %s, \
-                          code_on_page = %s, \
-                          date_collected = now() \
-                          WHERE proj_unixname = %s \
-                          AND datasource_id = %s \
-                          AND code = %s;'
+insertStatusQuery = 'INSERT INTO ow_project_status \
+                          (proj_unixname, \
+                          code, \
+                          description, \
+                          code_on_page, \
+                          date_collected, \
+                          datasource_id) \
+                          VALUES (%s, %s, %s, %s, now(), %s)'
 
 try:
     cursor.execute(selectQuery, (datasourceID,))
@@ -219,13 +210,13 @@ try:
 
             details = soup.find_all('li')
 
-            runQuery('Status', updateStatusQuery)  # Updates the status table
-            runQuery('Environment', updateEnvironmentQuery)  # Updates the environment table
-            runQuery('Audience', updateAudienceQuery)  # Updates the intended audience table
-            runQuery('License', updateLicensesQuery)  # Updates the licenses table
-            runQuery('System', updateSystemQuery)  # Updates the operating system table
-            runQuery('Language', updateLanguageQuery)  # Updates the programming language table
-            runQuery('Topic', updateTopicQuery)  # Updates the topic table
+            runQuery('Status', insertStatusQuery)  # Updates the status table
+            runQuery('Environment', insertEnvironmentQuery)  # Updates the environment table
+            runQuery('Audience', insertAudienceQuery)  # Updates the intended audience table
+            runQuery('License', insertLicensesQuery)  # Updates the licenses table
+            runQuery('System', insertSystemQuery)  # Updates the operating system table
+            runQuery('Language', insertLanguageQuery)  # Updates the programming language table
+            runQuery('Topic', insertTopicQuery)  # Updates the topic table
 
             updateDescription()  # Updates the description table
 
