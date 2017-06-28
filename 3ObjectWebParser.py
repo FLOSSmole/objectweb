@@ -36,14 +36,15 @@ import pymysql
 import re
 import sys
 from bs4 import BeautifulSoup
+
 datasourceID = sys.argv[1]
 dbuser = 'megan'
 dbpw = sys.argv[2]
 dbschema = 'objectweb'
 dbhost = 'flossdata.syr.edu'
 
-
 projDesc = None
+
 # Update the description table
 def updateDescription():
     try:
@@ -52,7 +53,7 @@ def updateDescription():
                         projDesc,
                         datasourceID))
         dbconn.commit()
-        print(currentProject, "updated in description table!")
+        print(currentProject, "inserted description!")
     except pymysql.Error as err:
         print(err)
         dbconn.rollback()
@@ -85,7 +86,7 @@ def runQuery(word, query):
                                                 codeOnPage,
                                                 datasourceID))
                                 dbconn.commit()
-                                print(currentProject, "updated in status table!")
+                                print(currentProject, "inserted status!")
                             except pymysql.Error as err:
                                 print(err)
                                 dbconn.rollback()
@@ -98,7 +99,7 @@ def runQuery(word, query):
                                                 code,
                                                 descript))
                                 dbconn.commit()
-                                print(currentProject, "updated in", word, "table!")
+                                print(currentProject, "inserted", word, "!")
                             except pymysql.Error as err:
                                 print(err)
                                 dbconn.rollback()
@@ -109,7 +110,7 @@ try:
                              passwd=dbpw,
                              db=dbschema,
                              use_unicode=True,
-                             charset="utf8mb4")
+                             charset='utf8mb4')
     cursor = dbconn.cursor()
 except pymysql.Error as err:
     print(err)
@@ -151,7 +152,7 @@ insertLicensesQuery = 'INSERT INTO ow_project_licenses \
                           date_collected) \
                           VALUES (%s, %s, %s, %s, now())'
 
-updateSystemQuery = 'INSERT INTO ow_project_operating_system \
+insertSystemQuery = 'INSERT INTO ow_project_operating_system \
                           (proj_unixname, \
                           datasource_id, \
                           code, \
@@ -196,11 +197,11 @@ try:
         print('\nworking on', currentProject)
 
         try:
-            soup = BeautifulSoup(html, "html.parser")
+            soup = BeautifulSoup(html, 'html.parser')
             projectHtml = str(soup)
 
             # Get description of project
-            descriptionSection = soup.find_all("td", width='99%')
+            descriptionSection = soup.find_all('td', width='99%')
 
             for desc in descriptionSection:
                 descriptionLines = desc.find('p')
