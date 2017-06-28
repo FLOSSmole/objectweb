@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 28 10:27:22 2017
+
+@author: megan
+"""
+
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
 # License: GPLv3
@@ -34,7 +42,6 @@
 import re
 import sys
 import pymysql
-import datetime
 from bs4 import BeautifulSoup
 try:
     import urllib.request as urllib2
@@ -42,17 +49,20 @@ except ImportError:
     import urllib2
 
 datasource_id = sys.argv[1]
-password      = sys.argv[2]
+dbpasswd      = sys.argv[2]
+dbhost = ''
+dbuser = ''
+dbschema = ''
 
 adminList = []
 
 
 # establish database connection: SYR
 try:
-    db = pymysql.connect(host='flossdata.syr.edu',
-                     user='',
-                     passwd='',
-                     db='',
+    db = pymysql.connect(host=dbhost,
+                     user=dbuser,
+                     passwd=dbpasswd,
+                     db= dbschema,
                      use_unicode=True,
                      charset="utf8mb4")
     cursor = db.cursor()
