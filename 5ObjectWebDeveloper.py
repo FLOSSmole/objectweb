@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
 # License: GPLv3
-# 
+#
 # Contribution from:
 # Caroline Frankel
 #
@@ -40,32 +40,40 @@ try:
 except ImportError:
     import urllib2
 
+datasource_id = sys.argv[1]
+dbpasswd      = sys.argv[2]
+dbhost = 'flossdata.syr.edu'
+dbuser = 'megan'
+dbschema = 'objectweb'
+
 # establish database connection: SYR
 try:
-    db = pymysql.connect(host='flossdata.syr.edu',
-                     user='',
-                     passwd='',
-                     db='',
-                     use_unicode=True,
-                     charset="utf8mb4")
-    cursor = db.cursor()
+    dbconn = pymysql.connect(host=dbhost,
+                             user=dbuser,
+                             passwd=dbpasswd,
+                             db=dbschema,
+                             use_unicode=True,
+                             charset='utf8mb4')
+    cursor = dbconn.cursor()
 except pymysql.Error as err:
     print(err)
 
-# Get list of all projects & urls from the database
-selectQuery = 'SELECT datasource_id, dev_loginname FROM ow_developer_projects'
+# Get list of all developers that we spotted on any actual project
+selectQuery = 'SELECT dev_loginname \
+               FROM ow_developer_projects\
+               WHERE datasource_id = %s'
 
-updateDevelopersQuery = 'UPDATE ow_developers  \
-                     SET \
-                     realname = %s, \
-                     dev_id = %s, \
-                     member_since = %s, \
-                     email = %s, \
-                     user_url = %s, \
-                     user_html = %s, \
-                     date_collected = now() \
-                     WHERE datasource_id = %s \
-                     AND dev_loginname = %s'
+insertDevelopersQuery = 'INSERT INTO ow_developers \
+                        (dev_loginname, \
+                        realname, \
+                        dev_id, \
+                        datasource_id, \
+                        member_since, \
+                        email, \
+                        user_url, \
+                        user_html, \
+                        date_collected) \
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, now())'
 
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -75,35 +83,42 @@ hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML,
        'Connection': 'keep-alive'}
 
 try:
-    cursor.execute(selectQuery)
-    listOfProjects = cursor.fetchall()
+    cursor.execute(selectQuery, (datasource_id,))
+    listOfPeople = cursor.fetchall()
 
-    for project in listOfProjects:
-        datasource_id = project[0]
-        loginname = project[1]
-        print('working on', loginname)
+    for project in listOfPeople:
+        print('***person:')
+        dev_loginname = project[0]
+        print('working on', dev_loginname)
+        realname = ''
+        since = ''
+        email = ''
+        userUrl = ''
+        userhtml = ''
 
         try:
-            userUrl = 'https://forge.ow2.org/users/' + loginname + '/'
-            # print(userUrl)
+            userUrl = 'https://forge.ow2.org/users/' + dev_loginname
+            print("userUrl:", userUrl)
+
             req = urllib2.Request(userUrl, headers=hdr)
             userhtml = urllib2.urlopen(req).read()
-            html = str(userhtml)
-            # print(userhtml)
             soup = BeautifulSoup(userhtml, 'html.parser')
-
+         
+            # get the developer's number
             regexId = 'href=\"/people/viewprofile\.php\?user_id=(.*?)\"'
-            userId = re.findall(regexId, str(soup))
-            if userId:
-                dev_id = userId[0]
-                # print(dev_id)
+            userNum = re.findall(regexId, str(soup))
+            if userNum:
+                devId = userNum[0]
+                print("num:", devId)
 
+            # get the developer's real name
             regexRealName = '<td>Real Name </td>\s*<td><strong>(.*?)</strong></td>'
             realName = re.findall(regexRealName, str(soup))
             if realName:
-                name = realName[0]
-                # print(name)
+                realname = realName[0]
+                print("name:", realname)
 
+            # get developer's email address
             regexEmail = '<td>Your Email Address: </td>\s*<td>\s*<strong><a href=\"(.*?)\">(.*?)</a>'
             emailList = re.findall(regexEmail, str(soup))
             if emailList:
@@ -111,28 +126,31 @@ try:
                 for e in email:
                     if 'sendmessage.php' not in e:
                         email = e
-                        # print(email)
+                        print("email:", email)
 
+            # get member since
             regexMemberSince = '<td>\s*Site Member Since	</td>\s*<td><strong>(.*?)</strong>'
             memberSince = re.findall(regexMemberSince, str(soup))
             if memberSince:
                 since = memberSince[0]
+                print("since:", since)
 
             try:
-                cursor.execute(updateDevelopersQuery, (name,
-                                        dev_id,
-                                        since,
-                                        email,
-                                        userUrl,
-                                        html,
-                                        datasource_id,
-                                        loginname))
-                db.commit()
-                print(loginname + ' updated!')
+                cursor.execute(insertDevelopersQuery, (dev_loginname,
+                                                       realname,
+                                                       devId,
+                                                       datasource_id,
+                                                       since,
+                                                       email,
+                                                       userUrl,
+                                                       userhtml))
+                dbconn.commit()
             except pymysql.Error as err:
                 print(err)
-                db.rollback()
+                dbconn.rollback()
         except urllib2.HTTPError as herror:
             print(herror)
 except pymysql.Error as err:
     print(err)
+
+dbconn.close()
