@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 28 10:27:22 2017
-
-@author: megan
-"""
-
-# -*- coding: utf-8 -*-
 # Copyright (C) 2004-2017 Megan Squire <msquire@elon.edu>
 # License: GPLv3
 # 
@@ -54,37 +47,41 @@ dbhost = ''
 dbuser = ''
 dbschema = ''
 
-adminList = []
-
-
 # establish database connection: SYR
 try:
     db = pymysql.connect(host=dbhost,
                      user=dbuser,
                      passwd=dbpasswd,
-                     db= dbschema,
+                     db=dbschema,
                      use_unicode=True,
-                     charset="utf8mb4")
+                     charset='utf8mb4')
     cursor = db.cursor()
 except pymysql.Error as err:
     print(err)
 
-# Get list of all projects & urls from the database
-selectIndexQuery = 'SELECT proj_unixname, indexhtml FROM ow_project_indexes \
-                  WHERE datasource_id=%s ORDER BY 1'  # LIMIT 1'
+# Get list of all projects & urls & project numbers from the database
+selectIndexQuery = 'SELECT opi.proj_unixname, opi.indexhtml, op.proj_id_num \
+                    FROM ow_project_indexes opi \
+                    INNER JOIN ow_projects op \
+                    ON opi.datasource_id = op.datasource_id \
+                    AND opi.proj_unixname = op.proj_unixname \
+                    WHERE opi.datasource_id = %s \
+                    AND op.datasource_id = %s \
+                    ORDER BY 1'
 
-selectQuery = 'SELECT proj_id_num FROM ow_projects \
-                WHERE proj_unixname = %s AND datasource_id = %s'
+updateDeveloperProjectHtml = 'UPDATE ow_project_indexes \
+                              SET devhtml = %s \
+                              WHERE proj_unixname = %s \
+                              AND datasource_id = %s'
 
-updateDeveloperProjectQuery = 'UPDATE ow_developer_projects  \
-                     SET  \
-                     dev_loginname = %s, \
-                     is_admin = %s, \
-                     position = %s, \
-                     date_collected = now() \
-                     WHERE proj_unixname = %s \
-                     AND datasource_id = %s \
-                     AND dev_loginname = %s'
+insertDeveloperProjectQuery = 'INSERT INTO ow_developer_projects \
+                               (dev_loginname, \
+                                is_admin, \
+                                position, \
+                                date_collected, \
+                                datasource_id, \
+                                proj_unixname) \
+                               VALUES(%s, %s, %s, now(), %s, %s)'
 
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -93,83 +90,86 @@ hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML,
        'Accept-Language': 'en-US,en;q=0.8',
        'Connection': 'keep-alive'}
 
+devPagePrefix = 'https://forge.ow2.org/project/memberlist.php?group_id='
 try:
-    cursor.execute(selectIndexQuery, (datasource_id))
+    cursor.execute(selectIndexQuery, (datasource_id, datasource_id))
     listOfProjects = cursor.fetchall()
 
     for project in listOfProjects:
+        adminList = []
         currentProject = project[0]
         html = project[1]
-        print('working on', currentProject)
+        projId = project[2]
+        print('working on', currentProject, "(", projId, ")")
 
         try:
-            regex1 = 'href=\"/users/(.*?)/\">'
-
-            soup = BeautifulSoup(html, "html.parser")
-            tr = soup.find_all('tr', align='left')
-            for t in tr:
-                admin = re.findall(regex1, str(t))
-                if admin:
-                    for a in admin:
-                        adminList.append(a)
-
-        except pymysql.Error as err:
-            print(err.reason)
-        try:
-            cursor.execute(selectQuery, (currentProject, datasource_id))
-            projId = cursor.fetchall()
-
-            for ids in projId:
-                num = ids[0]
-                memberLink = 'https://forge.ow2.org/project/memberlist.php?group_id=' + str(num)
-
-                req = urllib2.Request(memberLink, headers=hdr)
-                memberhtml = urllib2.urlopen(req).read()
-
-                soup2 = BeautifulSoup(memberhtml, 'html.parser')
+            memberLink = devPagePrefix + str(projId)
+    
+            req = urllib2.Request(memberLink, headers=hdr)
+            memberHtml = urllib2.urlopen(req).read()
+            
+            if memberHtml:
+                # update the database table with this new developers html
+                try:
+                    cursor.execute(updateDeveloperProjectHtml, (memberHtml, 
+                                                                currentProject,
+                                                                datasource_id))
+                except pymysql.Error as err:
+                    print(err)
+                    
+                soup2 = BeautifulSoup(memberHtml, 'html.parser')
                 p = soup2.find_all('p')
-
+        
                 for section in p:
                     table = section.find('table')
                     if table:
-                        tr1 = table.find_all('tr')
-                        for t in tr1:
-                            if len(t) == 9:
-                                td = t.find_all('td')
-                                for line in td:
+                        everyone = table.find_all('tr')
+                        for person in everyone:
+                            print("***FOUND PERSON***")
+                            devlogin = ''
+                            isadmin = '0'
+                            position = ''
+                            if len(person) == 9:
+                                # find the users
+                                people = person.find_all('td')
+                                for item in people:
+                                    # grab their system username
                                     regexLogin = '/users/(.*?)/'
-                                    login = re.findall(regexLogin, str(line))
+                                    login = re.findall(regexLogin, str(item))
                                     if login:
-                                        loginname = login[0]
-                                        # print(loginname)
-
+                                        devlogin = login[0]
+                                        print('--name:', devlogin)
+    
+                                    # find that user's role on the project
                                     regexRole = '<td\salign=\"center\">(.*?)</td>'
-                                    role = re.findall(regexRole, str(line))
+                                    role = re.findall(regexRole, str(item))
                                     if role:
                                         if len(role[0]) < 20:
                                             position = role[0]
-                                            # print(position)
+                                            print("--position:", position)
 
-                                if loginname in adminList:
-                                    isadmin = '1'
-                                else:
-                                    isadmin = '0'
-                                # print('isadmin', isadmin)
-
+                                    # find whether they are an admin
+                                    # <td><strong>Andrea Zoppello</strong>
+                                    regexAdmin = '<td><strong>(.*?)'
+                                    admin = re.findall(regexAdmin, str(item))
+                                    if admin:
+                                        isadmin = '1'
+                                        print('--isadmin:', isadmin)
                                 try:
-                                    cursor.execute(updateDeveloperProjectQuery,
-                                                   (loginname,
+                                    cursor.execute(insertDeveloperProjectQuery,
+                                                   (devlogin,
                                                     isadmin,
                                                     position,
-                                                    currentProject,
                                                     datasource_id,
-                                                    loginname))
+                                                    currentProject))
                                     db.commit()
                                 except pymysql.Error as err:
                                     print(err)
                                     db.rollback()
 
+
         except urllib2.HTTPError as herror:
             print(herror)
 except pymysql.Error as err:
     print(err)
+db.close()
